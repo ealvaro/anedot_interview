@@ -4,7 +4,10 @@ require 'nokogiri'
 class Scraper
 
   URL = "https://seattle.craigslist.org/search/cta?query=jeep"
-
+  YEAR_COL = 4
+  DATE_COL = 8
+  TITLE_COL = 76
+  PRICE_COL = 12
   attr_accessor :parse_page
 
   def initialize
@@ -18,6 +21,10 @@ class Scraper
 
   def get_titles
     item_container.css(".result-heading").css(".result-title").children.map { |t| t.text }.compact
+  end
+
+  def get_prices
+    item_container.css(".result-meta").css(".result-price").children.map { |p| p.text }.compact
   end
 
   def extract_year (title)
@@ -46,11 +53,15 @@ private
   # puts scraper.parse_page
   dates = scraper.get_dates
   titles = scraper.get_titles
-  years = scraper.get_years(titles)
+  prices = scraper.get_prices
+  years = scraper.get_years(titles)                                   # Years are inside the Titles
+  prices_total = prices.map { |p| p.gsub(/\D/,'').to_i}.reduce(0, :+) # Get rid of currency formatting and calculate total
 
   # OUTPUT
   (0...titles.size).each do |i|
     # puts "#{i} - "
-    puts "#{years[i]} - #{dates[i]} - #{titles[i]}"
+    puts "%-#{YEAR_COL}s"  % years[i] + " - %-#{DATE_COL}s" % dates[i] + " - %-#{TITLE_COL}s" % titles[i] + " - %-#{PRICE_COL}s" % prices[i]
   end
+  puts "_______________________"
+  puts "TOTAL = $ #{prices_total}"
 end
